@@ -113,7 +113,12 @@ namespace AppStoreAPI.Controllers
                     }
                     catch (Exception ex)
                     {
-                        return BadRequest(ex.Message);
+                        if(environment.EnvironmentName=="Development")
+                            return BadRequest(ex.Message);
+                        else
+                        {
+                            return StatusCode(500);
+                        }
                     }
                 }
                 else
