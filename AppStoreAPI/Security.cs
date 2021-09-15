@@ -22,5 +22,7 @@ namespace AppStoreAPI
                 return hashedInputStringBuilder.ToString();
             }
         }
+
+        public static string key = "08ebfdcc7f07a7a301d564774829231f375f83f4a948d062e8d1926bbb80b2fe";
     }
 }

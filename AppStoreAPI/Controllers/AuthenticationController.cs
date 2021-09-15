@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Dapper;
 using System.Data.SqlClient;
 using AppStoreAPI.Models;
+using AppStoreAPI.Services;
 
 namespace AppStoreAPI.Controllers
 {
@@ -39,7 +40,7 @@ namespace AppStoreAPI.Controllers
                     userToGet.Gender = connection.QueryFirstOrDefault<UserGender>("Select * from Gender where id=@idGender",new { result.idGender});
                     userToGet.developer = connection.QueryFirstOrDefault<DeveloperToGet>("Select Developer.*, Users.guid as 'userGuid' from Developer join Users on Developer.idUser = Users.id where idUser = @id",new { result.id });
 
-                    return Ok(userToGet);
+                    return Ok(new { userToGet, token=TokenService.GenerateToken(userToGet) });
                 }
             }
             catch (Exception ex)
