@@ -23,6 +23,6 @@ namespace AppStoreAPI
             }
         }
 
-        public static string key = "08ebfdcc7f07a7a301d564774829231f375f83f4a948d062e8d1926bbb80b2fe";
+        public static string key = "67fdd1a9f3a313077b4092d37dfcc57c0a051a161b26a239583c28a9e11372692ba61100bceb12dee4cd736619915e6c0066c03340a3832928f3bf74fb7c0fb2";
     }
 }

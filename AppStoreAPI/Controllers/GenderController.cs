@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace AppStoreAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class GenderController : ControllerBase
     {

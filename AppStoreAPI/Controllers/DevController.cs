@@ -7,11 +7,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http.Hosting;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AppStoreAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
+    
     public class DevController : ControllerBase
     {
         private readonly IWebHostEnvironment environment;
@@ -22,6 +24,7 @@ namespace AppStoreAPI.Controllers
             this.environment = environment;
         }
         [HttpGet]
+        [Authorize(Roles = "User")]
         public IActionResult GetUrl()
         {
             return Ok(Request.Headers);

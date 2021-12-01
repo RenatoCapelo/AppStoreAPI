@@ -12,5 +12,6 @@ namespace AppStoreAPI.Models
         public int id { get; set; }
         [Required]
         public string description { get; set; }
+        public int permissionsLevel { get; set; }
     }
 }

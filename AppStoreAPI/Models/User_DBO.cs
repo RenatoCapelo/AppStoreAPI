@@ -15,6 +15,6 @@ namespace AppStoreAPI.Models
         public string password { get; set; }
         public Guid guid { get; set; }
         public Guid photoguid { get; set; }
-        public int roleid { get; set; }
+        public int idRole { get; set; }
     }
 }

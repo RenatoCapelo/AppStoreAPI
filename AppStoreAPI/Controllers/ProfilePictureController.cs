@@ -13,7 +13,7 @@ using Dapper;
 namespace AppStoreAPI.Controllers
 {
     [ApiController]
-    [Route("api/User/{guid}/ProfilePicture/")]
+    [Route("User/{guid}/ProfilePicture/")]
     public class ProfilePictureController : ControllerBase
     {
         private readonly IConfiguration config;

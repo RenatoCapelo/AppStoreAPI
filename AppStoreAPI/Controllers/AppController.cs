@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace AppStoreAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     
     public class AppController : ControllerBase
@@ -31,27 +31,27 @@ namespace AppStoreAPI.Controllers
             this.config = config;
         }
         [HttpGet]
-        [Authorize(Roles ="1")]
-        public string get()
+        [Authorize(Roles="Admin")]
+        public string Get()
         {
             return "Ok";
         }
 
         [DisableRequestSizeLimit]
         [HttpPost]
-        [Authorize]
-
-        public async Task<IActionResult> PublishAplication([FromForm]ApplicationToPost appToPublish)
+        [Authorize(Roles = "Dev")]
+        public async Task<IActionResult> PublishApplication([FromForm]ApplicationToPost appToPublish)
         {
-
-            var dev = Guid.Parse(User.FindFirst("Guid").Value);
+            var guid = Guid.Parse(User.FindFirst("Guid").Value);
+            Guid? dev;
 
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
-                string sql = "Select 0+count(*) from Developer where devGuid=@devGuid";
-                if (await con.ExecuteScalarAsync<int>(sql, new { devGuid=dev }) == 0)
+                string sql = "Select Developer.devGuid from Developer join Users on Users.id = Developer.idUser where Users.guid = @userGuid;";
+                dev = await con.ExecuteScalarAsync<Guid?>(sql, new {userGuid = guid});
+                if (!dev.HasValue)
                 {
-                    ModelState.AddModelError("devGuid", "The guid provided doesn't reffer to any developer registered");
+                    ModelState.AddModelError("devGuid", "The guid provided doesn't refer to any developer registered");
                     return NotFound(ModelState.Values.Select(e => e.Errors).ToList());
                 }
             }
@@ -91,7 +91,7 @@ namespace AppStoreAPI.Controllers
                             manifestData = new byte[50 * 1024];
                             using (Stream strm = item.Open())
                             {
-                                strm.Read(manifestData, 0, manifestData.Length);
+                                await strm.ReadAsync(manifestData, 0, manifestData.Length);
                             }
 
                         }
@@ -115,7 +115,7 @@ namespace AppStoreAPI.Controllers
                     var appInfo = new AppInfo()
                     {
                         appGuid=appGuid,
-                        devGuid= dev,
+                        devGuid= dev.Value,
                         packageName = info.packageName,
                         versionName = info.versionName,
                         label=info.label,
@@ -163,6 +163,9 @@ namespace AppStoreAPI.Controllers
             }
 
         }
+
+        [HttpPut]
+        [Authorize(Roles = "Dev")]
         public async Task<IActionResult> UpdateAplication([FromForm]ApplicationToPost appToUpdate)
         {
             return StatusCode(405);

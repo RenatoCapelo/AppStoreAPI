@@ -7,13 +7,13 @@ namespace AppStoreAPI.Models
 {
     public class UserToGet
     {
-        public Guid guid { get; set; }
-        public string email { get; set; }
-        public Guid photo_guid { get; set; }
-        public string name { get; set; }
-        public DateTime dob { get; set; }
+        public Guid Guid { get; set; }
+        public string Email { get; set; }
+        public Guid PhotoGuid { get; set; }
+        public string Name { get; set; }
+        public DateTime Dob { get; set; }
         public UserGender Gender { get; set; }
-        public DeveloperToGet developer { get; set; }
-        public int roleId { get; set; }
+        public DeveloperToGet Developer { get; set; }
+        public string Role { get; set; }
     }
 }

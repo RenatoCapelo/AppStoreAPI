@@ -14,12 +14,12 @@ namespace AppStoreAPI.Services
         public static string GenerateToken(UserToGet user)
         {
             return new JwtBuilder()
-                .WithAlgorithm(new HMACSHA256Algorithm())
+                .WithAlgorithm(new HMACSHA512Algorithm())
                 .ExpirationTime(DateTime.Now.AddDays(1))
                 .WithSecret(Security.key)
-                .AddClaim("Guid",user.guid)
-                .AddClaim("Name", user.name)
-                .AddClaim("Role", user.roleId)
+                .AddClaim("Guid",user.Guid)
+                .AddClaim("Name", user.Name)
+                .AddClaim("role", user.Role)
                 .Encode();
         }
     }
