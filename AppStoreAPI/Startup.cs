@@ -50,6 +50,19 @@ namespace AppStoreAPI
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "AppStoreAPI", Version = "v1" });
             });
+
+            services.AddCors(options =>
+            {
+                // definir e identificar a politica de CORS
+                // neste exemplo vamos aceitar todos os tipos de pedidos
+                options.AddPolicy("AllowBrowserApps",
+                    policy =>
+                    {
+                        policy.AllowAnyOrigin();
+                        policy.AllowAnyMethod();
+                        policy.AllowAnyHeader();
+                    });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -59,8 +72,11 @@ namespace AppStoreAPI
             {
                 app.UseDeveloperExceptionPage();
             }
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "AppStoreAPI v1"));
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "AppStoreAPI v1"));
+
+            app.UseCors("AllowBrowserApps");
 
             app.UseHttpsRedirection();
 
