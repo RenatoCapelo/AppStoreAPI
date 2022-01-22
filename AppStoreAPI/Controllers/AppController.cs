@@ -32,9 +32,9 @@ namespace AppStoreAPI.Controllers
         }
         [HttpGet]
         [Authorize(Roles="Admin")]
-        public string Get()
+        public IActionResult Get()
         {
-            return "Ok";
+            return Ok();
         }
 
         [DisableRequestSizeLimit]

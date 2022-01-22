@@ -13,7 +13,7 @@ namespace AppStoreAPI.Models
         public string Name { get; set; }
         public DateTime Dob { get; set; }
         public UserGender Gender { get; set; }
-        public DeveloperToGet Developer { get; set; }
+        public DeveloperToGetOnAuth Developer { get; set; }
         public string Role { get; set; }
     }
 }
