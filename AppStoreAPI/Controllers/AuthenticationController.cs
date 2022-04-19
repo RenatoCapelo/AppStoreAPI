@@ -18,7 +18,7 @@ namespace AppStoreAPI.Controllers
     {
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult AuthenticateUser([FromBody] UserToAuth userToAuth)
+        public async Task<IActionResult> LoginAsync([FromBody] UserToAuth userToAuth)
         {
             //TODO - Refactor; add model to return object
             try
@@ -28,7 +28,7 @@ namespace AppStoreAPI.Controllers
                 using (var connection = new SqlConnection(Strings.ConnectionString))
                 {
                     string sqlAuth = "Select * from Users where email=@email and password=@password"; //"Select guid,email,photoguid,name,dob,idGender from Users where email=@email and password=@password";
-                    var result = connection.QueryFirstOrDefault<User_DBO>(sqlAuth, userToAuth);
+                    var result = await connection.QueryFirstOrDefaultAsync<User_DBO>(sqlAuth, userToAuth);
                     if (result == null)
                         return NotFound();
                     UserToGet userToGet = new UserToGet()
@@ -39,16 +39,29 @@ namespace AppStoreAPI.Controllers
                         Name=result.name,
                         Guid=result.guid,
                     };
-                    userToGet.Gender = connection.QueryFirstOrDefault<UserGender>("Select * from Gender where id=@idGender",new { result.idGender});
-                    userToGet.Developer = connection.QueryFirstOrDefault<DeveloperToGetOnAuth>("Select Developer.*, Users.guid as 'userGuid' from Developer join Users on Developer.idUser = Users.id where idUser = @id",new { result.id });
-                    userToGet.Role = connection.QueryFirstOrDefault<string>("Select [description] from UserRoles where id=@idRole",new {result.idRole});
-                    return Ok(new { userToGet, token=TokenService.GenerateToken(userToGet) });
+                    connection.Open();
+                    var userGenderTask = connection.QueryFirstOrDefaultAsync<UserGender>("Select * from Gender where id=@idGender",new { result.idGender});
+                    var userDeveloperTask = connection.QueryFirstOrDefaultAsync<DeveloperToGet>("Select Developer.*, Users.guid as 'userGuid' from Developer join Users on Developer.idUser = Users.id where idUser = @id",new { result.id });
+                    var userRoleTask = connection.QueryFirstOrDefaultAsync<string>("Select [description] from UserRoles where id=@idRole",new {result.idRole});
+                    Task.WaitAll(userDeveloperTask,userDeveloperTask,userRoleTask);
+                    connection.Close();
+                    userToGet.Gender = userGenderTask.Result;
+                    userToGet.Developer = userDeveloperTask.Result;
+                    userToGet.Role = userRoleTask.Result;
+                    return Ok(new { user=userToGet, token=TokenService.GenerateToken(userToGet) });
                 }
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-        }        
+        }
+
+        [HttpPost("validate")]
+        [Authorize]
+        public async Task<IActionResult> ValidateToken()
+        {
+            return Ok();
+        }
     }
 }

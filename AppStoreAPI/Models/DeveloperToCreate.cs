@@ -7,18 +7,15 @@ using System.Threading.Tasks;
 namespace AppStoreAPI.Models
 {
     public class DeveloperToCreate
-    {
-        //To be replaced with OAuth
+    {    
         [Required]
-        public Guid userGuid { get; set; }
-        [Required]
-        public string userPassword { get; set; }
-        [Required]
-        public string developerName { get; set; }
+        public string devName { get; set; }
+
         [Required]
         [Phone]
         public string phoneNum { get; set; }
+
         [EmailAddress]
-        public string secondEmail { get; set; }
+        public string secEmail { get; set; }
     }
 }

@@ -11,6 +11,16 @@ namespace AppStoreAPI.Models
     public class ApplicationToPost
     {
         [Required]
-        public IFormFile file { get; set; }
+        public IFormFile apk { get; set; }
+
+        [Required]
+        public string title { get; set; }
+
+        [Required]
+        public string description { get; set; }
+
+        [Required]
+        public int idAppCategory { get; set; }
+
     }
 }

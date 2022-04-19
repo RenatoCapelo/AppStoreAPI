@@ -38,7 +38,7 @@ namespace AppStoreAPI.Controllers
                 using (var conn = new SqlConnection(config.GetConnectionString("DefaultConnection")))
                 {
                     var res = conn.QueryFirst<UserToGet>("Select guid,email,photo_guid,name,dob from Users where guid=@uID", new { uID });
-                    res.Developer = conn.QueryFirst<DeveloperToGetOnAuth>("Select devGuid from Developer where idUser=@uID",new { uID });
+                    res.Developer = conn.QueryFirst<DeveloperToGet>("Select Developer.* from Developer where idUser=@uID",new { uID });
                     res.Gender = conn.QueryFirst<UserGender>("Select Gender.* from Gender join Users on Gender.Id=Users.idGender where Users.guid=@uID;", new { uID });
                     return Ok(res);
                 }
@@ -60,7 +60,18 @@ namespace AppStoreAPI.Controllers
                 {
                     var emailexists = conn.ExecuteScalar<int>("Select count(id) from Users where email=@email", new { user.email });
                     if (emailexists > 0)
-                        return BadRequest("The user already exists");
+                    {
+                        ModelState.AddModelError("email","There is already an user with the provided email");
+                    }
+                        
+                    var gender = conn.QueryFirst<UserGender>("Select * from Gender where id=@id", new { id = user.idGender });
+                    if (gender == null)
+                    {
+                        ModelState.AddModelError("gender", "The provided gender doesn't exist in our DataBase");
+                    }
+
+                    if (!ModelState.IsValid)
+                        return BadRequest(ModelState);
 
                     Guid guid;
                     int guidExists;
@@ -69,31 +80,58 @@ namespace AppStoreAPI.Controllers
                         guid = Guid.NewGuid();
                         guidExists = conn.ExecuteScalar<int>("Select count(guid) from Users where guid=@guid",new { guid = guid.ToString().ToUpper() });
                     } while (guidExists > 0);
+                    
 
                     user.password = Security.SHA512(user.password);
-                    var gender = conn.QueryFirst<UserGender>("Select * from Gender where id=@id", new { id = user.idGender });
-                    if (gender == null)
-                        return BadRequest("Gender not found");
 
-                    var insert = conn.ExecuteScalar<int>("Insert into Users(email,name,dob,idGender,password) values(@email,@name,@dob,@idGender,@password)", user);
+                    var insert = conn.ExecuteScalar<int>("Insert into Users(email,name,dob,idGender,password,guid) values(@email,@name,@dob,@idGender,@password,@guid)", new{
+                        email=user.email,
+                        name=user.name,
+                        dob=user.dob,
+                        guid=guid,
+                        idGender=user.idGender,
+                        password=user.password
+                    });
 
                     return Ok(
-                        new
+                        new UserToGet()
                         {
-                            guid,
-                            user.email,
-                            user.name,
-                            user.dob,
-                            gender
+                            Guid=guid,
+                            Email = user.email,
+                            Name = user.name,
+                            Dob = user.dob,
+                            Gender=gender
                         }
                         );
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest();
+                return BadRequest(ex.Message);
             }
         }
+
+        /*
+        [HttpPost("emailExists")]
+        [AllowAnonymous]
+        public async Task<IActionResult> userExists([FromBody] string email)
+        {
+            try
+            {
+                using(var conn = new SqlConnection(Strings.ConnectionString))
+                {
+                    var result = await conn.ExecuteScalarAsync<int>("Select count(*) from Users where Email=@email",new { email });
+                    if (result == 0)
+                        return Ok();
+                    return BadRequest("There already exists an User with that email");
+                }
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        */
 
         //// PUT api/<UserController>/5
         //[HttpPut("{id}/ProfilePicture")]

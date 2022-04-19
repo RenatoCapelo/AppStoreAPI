@@ -13,8 +13,6 @@ namespace AppStoreAPI.Models
         public string versionName { get; set; }
         public string label { get; set; }
         public string versionCode { get; set; }
-        public bool hasIcon { get; set; }
-        public string iconFileName { get; set; }
         public string minSdkVersion { get; set; }
         public string targetSdkVersion { get; set; }
         public List<string> Permissions { get; set; }
@@ -22,6 +20,5 @@ namespace AppStoreAPI.Models
         public bool supportLargeScreens { get; set; }
         public bool supportNormalScreens { get; set; }
         public bool supportSmallScreens { get; set; }
-        public string hostedAt { get; set; }
     }
 }

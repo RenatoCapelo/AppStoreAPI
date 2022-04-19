@@ -1,5 +1,6 @@
 ﻿using AppStoreAPI.Models;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -14,6 +15,7 @@ namespace AppStoreAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class GenderController : ControllerBase
     {
         private readonly IConfiguration config;
@@ -28,8 +30,8 @@ namespace AppStoreAPI.Controllers
         {
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
-                string sql = "Select * from Gender";
-                return Ok(con.Query(sql));
+                string sql = "Select * from Gender order by id";
+                return Ok(con.Query<UserGender>(sql));
             }
         }
 
@@ -49,6 +51,7 @@ namespace AppStoreAPI.Controllers
 
         // POST api/<GenderController>
         [HttpPost]
+        [Authorize(Roles ="Admin")]
         public IActionResult Post([FromBody] GenderToCreate gender)
         {
             try
@@ -71,6 +74,7 @@ namespace AppStoreAPI.Controllers
 
         // PUT api/<GenderController>/5
         [HttpPut("{id}")]
+        [Authorize(Roles ="Admin")]
         public IActionResult Put(int id, [FromBody] GenderToCreate gender)
         {
             try
@@ -98,6 +102,7 @@ namespace AppStoreAPI.Controllers
 
         // DELETE api/<GenderController>/5
         [HttpDelete("{id}")]
+        [Authorize(Roles ="Admin")]
         public IActionResult Delete(int id)
         {
             try

@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http.Hosting;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace AppStoreAPI.Controllers
 {
@@ -23,11 +24,11 @@ namespace AppStoreAPI.Controllers
         {
             this.environment = environment;
         }
-        [HttpGet]
-        [Authorize(Roles = "User")]
-        public IActionResult GetUrl()
+        [HttpPost]
+        [Authorize]
+        public IActionResult GetGuidFromToken()
         {
-            return Ok(Request.Headers);
+            return Ok(User.FindFirst("Guid").Value);
         }
     }
 }
