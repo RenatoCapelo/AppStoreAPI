@@ -19,5 +19,7 @@ namespace AppStoreAPI.Models
         public int versionCode { get; set; }
         public string versionName { get; set; }
         public string descripiton { get; set; }
+        public DateTime dateOfPublish { get; set; }
+        public DateTime dateOfUpdate { get; set; }
     }
 }

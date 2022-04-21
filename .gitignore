@@ -12,6 +12,8 @@
 
 temp/
 wwwroot/
+appsettings.json
+appsettings.development.json
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

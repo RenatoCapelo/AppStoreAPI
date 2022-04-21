@@ -8,6 +8,7 @@ using System.Data.SqlClient;
 using Dapper;
 using System.Threading;
 using AppStoreAPI.Models;
+using Microsoft.Extensions.Configuration;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -18,12 +19,17 @@ namespace AppStoreAPI.Controllers
     [Authorize()]
     public class AppCategoriesController : ControllerBase
     {
+        IConfiguration config;
+        AppCategoriesController(IConfiguration configuration)
+        {
+            this.config = configuration;
+        }
         // GET: api/<AppCategoriesController>
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAsync()
         {
-            using (var connection=new SqlConnection(Strings.ConnectionString))
+            using (var connection=new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 connection.Open();
                 var results = await connection.QueryAsync<ApplicationCategory,ApplicationMasterCategory,ApplicationCategory>("Select ApplicationCategory.id, ApplicationCategory.name, ApplicationMasterCategory.id, ApplicationMasterCategory.name from ApplicationCategory join ApplicationMasterCategory on ApplicationCategory.MasterCategoryID=ApplicationMasterCategory.id order by ApplicationMasterCategory.id, ApplicationCategory.id", (category, master) =>
@@ -40,7 +46,7 @@ namespace AppStoreAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAsync(int id)
         {
-            using (var connection = new SqlConnection(Strings.ConnectionString))
+            using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 connection.Open();
                 var results = await connection.QueryAsync<ApplicationCategory, ApplicationMasterCategory, ApplicationCategory>("Select ApplicationCategory.id, ApplicationCategory.name, ApplicationMasterCategory.id, ApplicationMasterCategory.name from ApplicationCategory join ApplicationMasterCategory on ApplicationCategory.MasterCategoryID=ApplicationMasterCategory.id where ApplicationCategory.id=@id order by ApplicationMasterCategory.id, ApplicationCategory.id", (category, master) =>
@@ -56,7 +62,7 @@ namespace AppStoreAPI.Controllers
         [HttpGet("GetByMaster/{id}")]
         public async Task<IActionResult> GetByMasterCategoryAsync(int id)
         {
-            using (var connection = new SqlConnection(Strings.ConnectionString))
+            using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 connection.Open();
                 var results = await connection.QueryAsync<ApplicationCategory, ApplicationMasterCategory, ApplicationCategory>("Select ApplicationCategory.id, ApplicationCategory.name, ApplicationMasterCategory.id, ApplicationMasterCategory.name from ApplicationCategory join ApplicationMasterCategory on ApplicationCategory.MasterCategoryID=ApplicationMasterCategory.id where ApplicationMasterCategory.id=@id order by ApplicationMasterCategory.id, ApplicationCategory.id", (category, master) =>
@@ -74,7 +80,7 @@ namespace AppStoreAPI.Controllers
         [Authorize(Roles="Admin")]
         public async Task<IActionResult> Post([FromBody]ApplicationCategoryToPost applicationCategoryToPost)
         {
-            using (var connection = new SqlConnection(Strings.ConnectionString)) {
+            using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection"))) {
                 var category = new ApplicationCategory();
                 category.name = applicationCategoryToPost.name;
                 connection.Open();

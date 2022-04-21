@@ -9,6 +9,7 @@ using System.Data.SqlClient;
 using AppStoreAPI.Models;
 using AppStoreAPI.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 
 namespace AppStoreAPI.Controllers
 {
@@ -16,6 +17,11 @@ namespace AppStoreAPI.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
+        IConfiguration config;
+        public AuthenticationController(IConfiguration config)
+        {
+            this.config = config;
+        }
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> LoginAsync([FromBody] UserToAuth userToAuth)
@@ -25,7 +31,7 @@ namespace AppStoreAPI.Controllers
             {
                 userToAuth.password = Security.SHA512(userToAuth.password);
 
-                using (var connection = new SqlConnection(Strings.ConnectionString))
+                using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
                 {
                     string sqlAuth = "Select * from Users where email=@email and password=@password"; //"Select guid,email,photoguid,name,dob,idGender from Users where email=@email and password=@password";
                     var result = await connection.QueryFirstOrDefaultAsync<User_DBO>(sqlAuth, userToAuth);

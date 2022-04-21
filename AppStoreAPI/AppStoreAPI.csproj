@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="temp\" />
     <Folder Include="wwwroot\AppPhotos\" />
     <Folder Include="wwwroot\ProfilePictures\" />
   </ItemGroup>

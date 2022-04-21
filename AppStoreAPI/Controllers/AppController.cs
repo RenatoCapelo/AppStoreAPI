@@ -32,11 +32,44 @@ namespace AppStoreAPI.Controllers
             this.environment = environment;
             this.config = config;
         }
-        [HttpGet()]
+        [HttpGet("{guid}",Name ="AppGet")]
         [AllowAnonymous]
-        public IActionResult Get([FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="page")] int page=1,[FromQuery(Name = "itemsToReturn")] int toReturn=1)
+        public async Task<IActionResult> GetByGuid(Guid guid) 
         {
-            using (var con=new SqlConnection(Strings.ConnectionString))
+            using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
+            {
+                var sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper where application.applicationGuid=@guid";
+                var res = connection.Query<Application_DBO, decimal?, ApplicationCategory, ApplicationMasterCategory, DeveloperToGet, AppToGet>(sql, (app, rating, category, master, dev) =>
+                {
+                    category.masterCategory = master;
+                    return new AppToGet()
+                    {
+                        applicationGuid = app.applicationGuid,
+                        applicationSize = app.applicationSize,
+                        developer = dev,
+                        applicationCategory = category,
+                        minSdkVersion = app.minsdkversion,
+                        packageName = app.packageName,
+                        title = app.title,
+                        versionCode = app.versionCode,
+                        versionName = app.versionName,
+                        ratingAverage = rating.HasValue ? (double)rating.Value : 0,
+                        dateOfPublish = app.dateOfPublish,
+                        dateOfUpdate = app.dateOfUpdate
+                    };
+                },
+                splitOn: "id,ratingAverage,id,id,id"
+                , param: new { guid }).FirstOrDefault();
+                if (res == null)
+                    return NotFound();
+                else
+                    return Ok(res);
+            }
+        }
+        [AllowAnonymous]
+        public IActionResult Search([FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="page")] int page=1,[FromQuery(Name = "itemsToReturn")] int toReturn=1)
+        {
+            using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 int idDev=0;
                 string sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper";
@@ -54,16 +87,22 @@ namespace AppStoreAPI.Controllers
                 sql += " 1=1";
                 if(!string.IsNullOrEmpty(sortBy)) 
                 {
+                    bool sortValid = false;
                     switch (sortBy.ToLowerInvariant())
                     {
-                        case "id":
+                        case "date":
+                            sortValid = true;
                             sql += " order by Application.id";
+                            break;
+                        case "downloads":
+                            sortValid = true;
+                            sql += " order by dbo.getDownloadCount(Application.id)";
                             break;
                         default:
                             break;
                     }
 
-                    if (!string.IsNullOrEmpty(orderBy))
+                    if (!string.IsNullOrEmpty(orderBy) && sortValid)
                     {
                         switch (orderBy.ToLowerInvariant())
                         {
@@ -78,8 +117,8 @@ namespace AppStoreAPI.Controllers
                         }
                     }
                 }
-                
 
+            
                 var results = con.Query<Application_DBO,decimal?,ApplicationCategory,ApplicationMasterCategory,DeveloperToGet,AppToGet>(sql, (app,rating,category,master,dev) => 
                 {
                     category.masterCategory = master;
@@ -95,6 +134,8 @@ namespace AppStoreAPI.Controllers
                         versionCode = app.versionCode,
                         versionName = app.versionName,
                         ratingAverage = rating.HasValue ? (double)rating.Value : 0,
+                        dateOfPublish = app.dateOfPublish,
+                        dateOfUpdate = app.dateOfUpdate
                     };
                 },
                 splitOn:"id,ratingAverage,id,id,id"
@@ -248,7 +289,8 @@ namespace AppStoreAPI.Controllers
                                 versionName=application_DBO.versionName,
                             };
                             transactionScope.Complete();
-                            return Ok(appToGet);
+                            //return Ok(appToGet);
+                            return CreatedAtRoute("AppGet", new { appGuid });
                         }
                     }
                     catch (Exception ex)
@@ -279,6 +321,13 @@ namespace AppStoreAPI.Controllers
         public async Task<IActionResult> UpdateAplication([FromForm]ApplicationToPost appToUpdate)
         {
             return StatusCode(405);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("Photos/{appGuid}")]
+        public async Task<IActionResult> GetAppPhotos(Guid appGuid)
+        {
+            return Ok(new { appGuid });
         }
     }
 }
