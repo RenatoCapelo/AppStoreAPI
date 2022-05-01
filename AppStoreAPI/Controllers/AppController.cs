@@ -66,13 +66,25 @@ namespace AppStoreAPI.Controllers
                     return Ok(res);
             }
         }
+        
+        /// <summary>
+        /// Method that Allows to search by apps by multiple parameters
+        /// </summary>
+        /// <param name="sortBy">Accepts: Date or Downloads</param>
+        /// <param name="orderBy">Accepts: ASC or DESC</param>
+        /// <param name="devGuid">Accepts: A Dev's unique identifier</param>
+        /// <param name="category">Accepts: A Category ID</param>
+        /// <param name="masterCategory">Accepts: 1 for Apps or 2 for Games</param>
+        /// <param name="page">Accepts: an integer that refeers to the requested page</param>
+        /// <param name="toReturn">Accepts: an integer that refers to the count of elements to retrieve</param>
+        /// <returns>A List of Apps that fulfill the requirements</returns>
         [AllowAnonymous]
         public IActionResult Search([FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="page")] int page=1,[FromQuery(Name = "itemsToReturn")] int toReturn=1)
         {
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 int idDev=0;
-                string sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper";
+                string sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,dbo.getIconPhoto(Application.id) as icon,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper";
                 sql += " where";
                 if (!string.IsNullOrEmpty(devGuid)) {
                     idDev = con.ExecuteScalar<int>("Select id from Developer where devGuid=@devGuid", new {devGuid});
@@ -118,8 +130,7 @@ namespace AppStoreAPI.Controllers
                     }
                 }
 
-            
-                var results = con.Query<Application_DBO,decimal?,ApplicationCategory,ApplicationMasterCategory,DeveloperToGet,AppToGet>(sql, (app,rating,category,master,dev) => 
+                var results = con.Query<Application_DBO,decimal?,Guid?,ApplicationCategory,ApplicationMasterCategory,DeveloperToGet,AppToGet>(sql, (app,rating,icon,category,master,dev) => 
                 {
                     category.masterCategory = master;
                     return new AppToGet()
@@ -135,10 +146,11 @@ namespace AppStoreAPI.Controllers
                         versionName = app.versionName,
                         ratingAverage = rating.HasValue ? (double)rating.Value : 0,
                         dateOfPublish = app.dateOfPublish,
-                        dateOfUpdate = app.dateOfUpdate
+                        dateOfUpdate = app.dateOfUpdate,
+                        Icon = icon
                     };
                 },
-                splitOn:"id,ratingAverage,id,id,id"
+                splitOn:"id,ratingAverage,icon,id,id,id"
                 ,param:new {idDev,category=category.Value,masterCategory=masterCategory.Value});
                         
                 return Ok(new

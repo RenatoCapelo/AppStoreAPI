@@ -16,5 +16,6 @@ namespace AppStoreAPI.Models
         public double ratingAverage { get; set; }
         public DateTime dateOfPublish { get; set; }
         public DateTime dateOfUpdate { get; set; }
+        public Guid? Icon { get; set; }
     }
 }
