@@ -32,9 +32,9 @@ namespace AppStoreAPI.Controllers
             this.environment = environment;
             this.config = config;
         }
-        [HttpGet("{guid}",Name ="AppGet")]
+        [HttpGet("{appGuid}", Name ="AppGet")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetByGuid(Guid guid) 
+        public async Task<IActionResult> GetByGuid(Guid appGuid) 
         {
             using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
@@ -46,6 +46,7 @@ namespace AppStoreAPI.Controllers
                     {
                         applicationGuid = app.applicationGuid,
                         applicationSize = app.applicationSize,
+                        description = app.description,
                         developer = dev,
                         applicationCategory = category,
                         minSdkVersion = app.minsdkversion,
@@ -59,7 +60,7 @@ namespace AppStoreAPI.Controllers
                     };
                 },
                 splitOn: "id,ratingAverage,id,id,id"
-                , param: new { guid }).FirstOrDefault();
+                , param: new { appGuid }).FirstOrDefault();
                 if (res == null)
                     return NotFound();
                 else
@@ -139,6 +140,7 @@ namespace AppStoreAPI.Controllers
                         applicationSize = app.applicationSize,
                         developer = dev,
                         applicationCategory = category,
+                        description = app.description,
                         minSdkVersion = app.minsdkversion,
                         packageName = app.packageName,
                         title = app.title,
@@ -215,7 +217,7 @@ namespace AppStoreAPI.Controllers
                         AppInfo appInfo;
                         using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                         {
-                            using (var fileStream = System.IO.File.Create($"{ environment.ContentRootPath}/temp/apps/{ appGuid}/" + appToPublish.apk.FileName))
+                            using (var fileStream = System.IO.File.Create($"{ environment.ContentRootPath}/temp/apps/{appGuid}/" + appToPublish.apk.FileName))
                             {
                                 await appToPublish.apk.CopyToAsync(fileStream);
                             }
@@ -278,19 +280,23 @@ namespace AppStoreAPI.Controllers
                                 packageName = info.packageName,
                                 title = appToPublish.title,
                                 versionCode = int.Parse(appInfo.versionCode),
-                                versionName = appInfo.versionName
+                                versionName = appInfo.versionName,
+                                description=appToPublish.description,
+                                dateOfPublish =DateTime.Now,
+                                dateOfUpdate = DateTime.Now,
                             };
 
                             con.Insert(application_DBO);
 
-                            Directory.CreateDirectory($"{environment.ContentRootPath}/wwwroot/apps/{dev}/{ appGuid}/");
-                            using (FileStream fs_1 = System.IO.File.Create($"{ environment.ContentRootPath}/wwwroot/apps/{dev}/{appGuid}/{info.label}.apk"))
+                            Directory.CreateDirectory($"{environment.ContentRootPath}/wwwroot/apps/{dev.devGuid}/{ appGuid}/");
+                            using (FileStream fs_1 = System.IO.File.Create($"{ environment.ContentRootPath}/wwwroot/apps/{dev.devGuid}/{appGuid}/{info.label}.apk"))
                             {
                                 await appToPublish.apk.CopyToAsync(fs_1);
                             }
                             AppToGet appToGet = new AppToGet()
                             {
                                 applicationCategory = appCategory,
+                                description = application_DBO.description,
                                 applicationGuid = appGuid,
                                 applicationSize = application_DBO.applicationSize,
                                 developer = new DeveloperToGet() { createdOn=dev.createdOn,devGuid=dev.devGuid, devName=dev.devName,phoneNum=dev.phoneNum,secEmail=dev.secEmail},
@@ -299,24 +305,25 @@ namespace AppStoreAPI.Controllers
                                 title=application_DBO.title,
                                 versionCode=application_DBO.versionCode,
                                 versionName=application_DBO.versionName,
+                                dateOfPublish = application_DBO.dateOfPublish,
+                                dateOfUpdate = application_DBO.dateOfUpdate,
                             };
                             transactionScope.Complete();
-                            //return Ok(appToGet);
-                            return CreatedAtRoute("AppGet", new { appGuid });
+                            return CreatedAtRoute("AppGet",  routeValues: new {appGuid = appToGet.applicationGuid} , value: appToGet);
                         }
                     }
                     catch (Exception ex)
                     {
-                        if (Directory.Exists($"{ environment.ContentRootPath}/wwwroot/apps/{dev}/{ appGuid}/"))
-                            Directory.Delete($"{ environment.ContentRootPath}/wwwroot/apps/{dev}/{ appGuid}/", true);
+                        if (Directory.Exists($"{ environment.ContentRootPath}/wwwroot/apps/{dev.devGuid}/{ appGuid}/"))
+                            Directory.Delete($"{ environment.ContentRootPath}/wwwroot/apps/{dev.devGuid}/{ appGuid}/", true);
                         return BadRequest(ex.Message);
                     }
                     finally
                     {
                         con.Close();
-                        if (Directory.Exists($"{ environment.ContentRootPath}/temp/apps/{ appGuid}/"))
+                        if (Directory.Exists($"{ environment.ContentRootPath}/temp/apps/{appGuid}/"))
                         {
-                            Directory.Delete($"{ environment.ContentRootPath}/temp/apps/{ appGuid}/", true);
+                            Directory.Delete($"{ environment.ContentRootPath}/temp/apps/{appGuid}/", true);
                         }
                     }
                 }

@@ -7,6 +7,7 @@ namespace AppStoreAPI.Models
         public Guid applicationGuid { get; set; }
         public DeveloperToGet developer { get; set; }
         public ApplicationCategory applicationCategory { get; set; }
+        public string description { get; set; }
         public string packageName { get; set; }
         public string title { get; set; }
         public int minSdkVersion { get; set; }

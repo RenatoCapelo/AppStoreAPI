@@ -18,7 +18,7 @@ namespace AppStoreAPI.Models
         public Guid applicationGuid { get; set; }
         public int versionCode { get; set; }
         public string versionName { get; set; }
-        public string descripiton { get; set; }
+        public string description { get; set; }
         public DateTime dateOfPublish { get; set; }
         public DateTime dateOfUpdate { get; set; }
     }
