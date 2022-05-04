@@ -76,11 +76,11 @@ namespace AppStoreAPI.Controllers
         /// <param name="devGuid">Accepts: A Dev's unique identifier</param>
         /// <param name="category">Accepts: A Category ID</param>
         /// <param name="masterCategory">Accepts: 1 for Apps or 2 for Games</param>
-        /// <param name="page">Accepts: an integer that refeers to the requested page</param>
-        /// <param name="toReturn">Accepts: an integer that refers to the count of elements to retrieve</param>
+        /// <param name="pageNumber">Accepts: an integer that refeers to the requested page</param>
+        /// <param name="pageSize">Accepts: an integer that refers to the count of elements to retrieve</param>
         /// <returns>A List of Apps that fulfill the requirements</returns>
         [AllowAnonymous]
-        public IActionResult Search([FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="page")] int page=1,[FromQuery(Name = "itemsToReturn")] int toReturn=1)
+        public IActionResult Search([FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="pageNumber")] int pageNumber=1,[FromQuery(Name = "pageSize")] int pageSize=5)
         {
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
@@ -157,10 +157,9 @@ namespace AppStoreAPI.Controllers
                         
                 return Ok(new
                 {
-                    pages = Math.Floor(((double)results.Count()) / toReturn),
-                    currentPage = page,
-                    count = toReturn,
-                    results = results.Skip((page-1 * toReturn)).Take(toReturn)
+                    pages = (int)Math.Ceiling(results.Count()/(double)pageSize),
+                    currentPage = pageNumber,
+                    results = results.Skip((pageNumber-1) * pageSize).Take(pageSize)
                 });
             }
         }
