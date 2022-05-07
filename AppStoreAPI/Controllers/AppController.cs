@@ -154,11 +154,12 @@ namespace AppStoreAPI.Controllers
                 },
                 splitOn:"id,ratingAverage,icon,id,id,id"
                 ,param:new {idDev,category=category.Value,masterCategory=masterCategory.Value});
-                        
+
                 return Ok(new
                 {
                     pages = (int)Math.Ceiling(results.Count()/(double)pageSize),
                     currentPage = pageNumber,
+                    count = results.Count(),
                     results = results.Skip((pageNumber-1) * pageSize).Take(pageSize)
                 });
             }
