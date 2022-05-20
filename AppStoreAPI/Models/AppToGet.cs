@@ -18,5 +18,6 @@ namespace AppStoreAPI.Models
         public DateTime dateOfPublish { get; set; }
         public DateTime dateOfUpdate { get; set; }
         public Guid? Icon { get; set; }
+        public string fileName { get; set; }
     }
 }

@@ -17,9 +17,10 @@ namespace AppStoreAPI.Services
                 .WithAlgorithm(new HMACSHA512Algorithm())
                 .ExpirationTime(DateTime.Now.AddDays(1))
                 .WithSecret(Security.key)
-                .AddClaim("Guid",user.Guid)
+                .AddClaim("Guid", user.Guid)
                 .AddClaim("Name", user.Name)
                 .AddClaim("role", user.Role)
+                .AddClaim("devGuid", user.Developer.devGuid)
                 .Encode();
         }
     }

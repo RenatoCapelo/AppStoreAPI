@@ -21,5 +21,6 @@ namespace AppStoreAPI.Models
         public string description { get; set; }
         public DateTime dateOfPublish { get; set; }
         public DateTime dateOfUpdate { get; set; }
+        public string fileName { get; set; }
     }
 }
