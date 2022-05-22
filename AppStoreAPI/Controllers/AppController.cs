@@ -299,7 +299,7 @@ namespace AppStoreAPI.Controllers
                                 con.Insert(application_DBO);
 
                                 Directory.CreateDirectory($"{environment.ContentRootPath}/wwwroot/storage/apps/{dev.devGuid}/{ appGuid}/");
-                                using (FileStream fs_1 = System.IO.File.Create($"{ environment.ContentRootPath}/wwwroot/apps/{dev.devGuid}/{appGuid}/{appToPublish.apk.FileName}"))
+                                using (FileStream fs_1 = System.IO.File.Create($"{ environment.ContentRootPath}/wwwroot/storage/apps/{dev.devGuid}/{appGuid}/{appToPublish.apk.FileName}"))
                                 {
                                     await appToPublish.apk.CopyToAsync(fs_1);
                                 }
@@ -420,6 +420,10 @@ namespace AppStoreAPI.Controllers
         [HttpDelete("{appGuid}")]
         public async Task<IActionResult> DeleteApp(Guid appGuid)
         {
+            try
+            {
+
+           
             var devGuid = Guid.Parse(User.FindFirst("devGuid").Value);
             var sql = @"Select * from Application
                         join Developer on Application.idDeveloper=Developer.id
@@ -437,7 +441,7 @@ namespace AppStoreAPI.Controllers
                     if (app is null)
                         return NotFound();
                     con.Open();
-                        await con.ExecuteAsync("dbo.DeleteApplication", commandType: System.Data.CommandType.StoredProcedure, param:new {guid=appGuid });
+                        await con.ExecuteAsync("DeleteApplication", commandType: System.Data.CommandType.StoredProcedure, param:new {guid=appGuid });
                     con.Close();
                     if (Directory.Exists($"{ environment.ContentRootPath}/wwwroot/storage/apps/{devGuid}/{ appGuid}/"))
                         Directory.Delete($"{ environment.ContentRootPath}/wwwroot/storage/apps/{devGuid}/{ appGuid}/", true);
@@ -445,6 +449,11 @@ namespace AppStoreAPI.Controllers
                 }
                 return Ok();
 	        }
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
