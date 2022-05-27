@@ -39,35 +39,44 @@ namespace AppStoreAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetByGuid(Guid appGuid) 
         {
-            using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
+            try
             {
-                var sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper where application.applicationGuid=@guid";
-                var res = connection.Query<Application_DBO, decimal?, ApplicationCategory, ApplicationMasterCategory, DeveloperToGet, AppToGet>(sql, (app, rating, category, master, dev) =>
+                using (var connection = new SqlConnection(config.GetConnectionString("DefaultConnection")))
                 {
-                    category.masterCategory = master;
-                    return new AppToGet()
-                    {
-                        applicationGuid = app.applicationGuid,
-                        applicationSize = app.applicationSize,
-                        description = app.description,
-                        developer = dev,
-                        applicationCategory = category,
-                        minSdkVersion = app.minsdkversion,
-                        packageName = app.packageName,
-                        title = app.title,
-                        versionCode = app.versionCode,
-                        versionName = app.versionName,
-                        ratingAverage = rating.HasValue ? (double)rating.Value : 0,
-                        dateOfPublish = app.dateOfPublish,
-                        dateOfUpdate = app.dateOfUpdate
-                    };
-                },
-                splitOn: "id,ratingAverage,id,id,id"
-                , param: new { appGuid }).FirstOrDefault();
-                if (res == null)
-                    return NotFound();
-                else
-                    return Ok(res);
+                    var sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,dbo.getIconPhoto(Application.id) as icon,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper where application.applicationGuid=@appGuid";
+                    var res = connection.Query<Application_DBO, decimal?, Guid, ApplicationCategory, ApplicationMasterCategory, DeveloperToGet, AppToGet>(sql, (app, rating, icon, category, master, dev) =>
+                     {
+                         category.masterCategory = master;
+                         return new AppToGet()
+                         {
+                             applicationGuid = app.applicationGuid,
+                             applicationSize = app.applicationSize,
+                             description = app.description,
+                             developer = dev,
+                             applicationCategory = category,
+                             minSdkVersion = app.minsdkversion,
+                             packageName = app.packageName,
+                             title = app.title,
+                             versionCode = app.versionCode,
+                             versionName = app.versionName,
+                             ratingAverage = rating.HasValue ? (double)rating.Value : 0,
+                             dateOfPublish = app.dateOfPublish,
+                             dateOfUpdate = app.dateOfUpdate,
+                             fileName = app.fileName,
+                             Icon = icon
+                         };
+                     },
+                    splitOn: "id,ratingAverage,icon,id,id,id"
+                    , param: new { appGuid }).FirstOrDefault();
+                    if (res == null)
+                        return NotFound();
+                    else
+                        return Ok(res);
+                }
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
         
@@ -157,6 +166,7 @@ namespace AppStoreAPI.Controllers
                         ratingAverage = rating.HasValue ? (double)rating.Value : 0,
                         dateOfPublish = app.dateOfPublish,
                         dateOfUpdate = app.dateOfUpdate,
+                        fileName=app.fileName,
                         Icon = icon
                     };
                 },
@@ -363,13 +373,28 @@ namespace AppStoreAPI.Controllers
         [HttpGet("Photos/{appGuid}")]
         public async Task<IActionResult> GetAppPhotos(Guid appGuid)
         {
-            return Ok(new { appGuid });
+            try
+            {
+                using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
+                {   
+                    var res = await con.QueryAsync<PhotoToGet>("SELECT ApplicationPhotos.idPhotoType, ApplicationPhotos.photoGuid as photo FROM [ApplicationPhotos] join Application on Application.id = ApplicationPhotos.idApp where Application.applicationGuid=@appGuid;", new { appGuid });
+                    return Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("Photos/{appGuid}")]
         [Authorize(Roles ="Dev")]
         public async Task<IActionResult> PublishAppPhotos(Guid appGuid,[FromBody] List<Photo> photos) 
         {
+            try
+            {
+
             var devGuid = Guid.Parse(User.FindFirst("devGuid").Value);
             var sql = @"Select Application.* from Application
                         join Developer on Application.idDeveloper=Developer.id
@@ -398,7 +423,7 @@ namespace AppStoreAPI.Controllers
                         var guid = Guid.NewGuid();
                         listPaths.Add($"/storage/apps/{devGuid}/{appGuid}/photos/{guid}.png");
 
-                        listTasks.Add(con.ExecuteAsync("dbo.newPhotoinApp", commandType: System.Data.CommandType.StoredProcedure, param: new { idApp = app.id, idPhotoType = photo.idPhotoType, photoGuid = guid }));
+                        listTasks.Add(con.ExecuteAsync("newPhotoinApp", commandType: System.Data.CommandType.StoredProcedure, param: new { idApp = app.id, idPhotoType = photo.idPhotoType, photoGuid = guid }));
                         if (!Directory.Exists($"{ environment.ContentRootPath}/wwwroot/storage/apps/{ devGuid}/{ appGuid}/photos"))
                             Directory.CreateDirectory($"{environment.ContentRootPath}/wwwroot/storage/apps/{ devGuid}/{ appGuid}/photos");
                         using (FileStream fs = System.IO.File.Create($"{environment.ContentRootPath}/wwwroot/storage/apps/{devGuid}/{appGuid}/photos/{guid}.png"))
@@ -414,6 +439,12 @@ namespace AppStoreAPI.Controllers
                 }
 
             }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
         }
 
         [Authorize(Roles ="Dev")]
