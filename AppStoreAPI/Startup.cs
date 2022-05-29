@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -104,7 +105,12 @@ namespace AppStoreAPI
             app.UseHttpsRedirection();
 
             //Lets us acess the files in the wwwroot folder without a controller
-            app.UseStaticFiles();
+            var extensionProvider = new FileExtensionContentTypeProvider();
+            extensionProvider.Mappings.Add(".apk", "application/vnd.android.package-archive");
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ContentTypeProvider = extensionProvider,
+            });
 
             app.UseRouting();
             app.UseAuthentication();
