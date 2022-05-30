@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ApkNet" Version="1.0.0" />
     <PackageReference Include="Dapper" Version="2.0.90" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
     <PackageReference Include="JWT" Version="8.4.0" />
@@ -25,6 +24,15 @@
     <Folder Include="temp\" />
     <Folder Include="wwwroot\AppPhotos\" />
     <Folder Include="wwwroot\ProfilePictures\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extensions\aapt.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Extensions\unzip.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

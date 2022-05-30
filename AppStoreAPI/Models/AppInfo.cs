@@ -16,9 +16,5 @@ namespace AppStoreAPI.Models
         public string minSdkVersion { get; set; }
         public string targetSdkVersion { get; set; }
         public List<string> Permissions { get; set; }
-        public bool supportAnyDensity { get; set; }
-        public bool supportLargeScreens { get; set; }
-        public bool supportNormalScreens { get; set; }
-        public bool supportSmallScreens { get; set; }
     }
 }

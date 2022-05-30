@@ -1,5 +1,4 @@
-﻿using ApkNet.ApkReader;
-using AppStoreAPI.Models;
+﻿using AppStoreAPI.Models;
 using Dapper;
 using Dapper.Contrib.Extensions;
 using Microsoft.AspNetCore.Authorization;
@@ -18,6 +17,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Transactions;
 using System.Drawing;
+using AppStoreAPI.Services.ApkParser;
 
 namespace AppStoreAPI.Controllers
 {
@@ -236,57 +236,28 @@ namespace AppStoreAPI.Controllers
                             AppInfo appInfo;
                             using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                             {
-                                using (var fileStream = System.IO.File.Create($"{ environment.ContentRootPath}/temp/apps/{appGuid}/" + appToPublish.apk.FileName))
+                                var path = $"{environment.ContentRootPath}/temp/apps/{appGuid}/" + appToPublish.apk.FileName;
+                                using (var fileStream = System.IO.File.Create(path))
                                 {
                                     await appToPublish.apk.CopyToAsync(fileStream);
                                 }
 
-                                var path = $"{environment.ContentRootPath}/temp/apps/{appGuid}/" + appToPublish.apk.FileName;
-                                var zipFile = ZipFile.OpenRead(path);
-                                foreach (var item in zipFile.Entries)
-                                {
-                                    if (item.Name.ToLower() == "androidmanifest.xml")
-                                    {
-                                        manifestData = new byte[50 * 1024];
-                                        using (Stream strm = item.Open())
-                                        {
-                                            await strm.ReadAsync(manifestData, 0, manifestData.Length);
-                                        }
+                                
 
-                                    }
-                                    if (item.Name.ToLower() == "resources.arsc")
-                                    {
-
-                                        using (Stream strm = item.Open())
-                                        {
-                                            using (BinaryReader s = new BinaryReader(strm))
-                                            {
-                                                resourcesData = s.ReadBytes((int)item.Length);
-                                            }
-                                        }
-                                    }
-                                }
-                                zipFile.Dispose();
-
-                                ApkReader apkReader = new ApkReader();
-                                ApkInfo info = apkReader.extractInfo(manifestData, resourcesData);
+                                var info = ApkParser.Parse($"{environment.ContentRootPath}\\Extensions",path);
+                                
 
                                 appInfo = new AppInfo()
                                 {
                                     appGuid = appGuid,
                                     devGuid = dev.devGuid,
-                                    packageName = info.packageName,
-                                    versionName = info.versionName,
-                                    label = info.label,
-                                    versionCode = info.versionCode,
-                                    minSdkVersion = info.minSdkVersion,
-                                    targetSdkVersion = info.targetSdkVersion,
-                                    Permissions = info.Permissions,
-
-                                    supportAnyDensity = info.supportAnyDensity,
-                                    supportLargeScreens = info.supportLargeScreens,
-                                    supportNormalScreens = info.supportNormalScreens,
-                                    supportSmallScreens = info.supportSmallScreens
+                                    packageName = info.PackageName,
+                                    versionName = info.VersionName,
+                                    label = info.Label,
+                                    versionCode = info.VersionCode.ToString(),
+                                    minSdkVersion = info.MinSdkVersion.ToString(),
+                                    targetSdkVersion = info.TargetSdkVersion.ToString(),
+                                    Permissions = info.Permissions.ToList(),
                                 };
 
                                 Application_DBO application_DBO = new Application_DBO()
@@ -296,7 +267,7 @@ namespace AppStoreAPI.Controllers
                                     idAppCategory = appToPublish.idAppCategory,
                                     idDeveloper = dev.id,
                                     minsdkversion = int.Parse(appInfo.minSdkVersion),
-                                    packageName = info.packageName,
+                                    packageName = appInfo.packageName,
                                     title = appToPublish.title,
                                     versionCode = int.Parse(appInfo.versionCode),
                                     versionName = appInfo.versionName,
@@ -378,6 +349,25 @@ namespace AppStoreAPI.Controllers
                 using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
                 {   
                     var res = await con.QueryAsync<PhotoToGet>("SELECT ApplicationPhotos.idPhotoType, ApplicationPhotos.photoGuid as photo FROM [ApplicationPhotos] join Application on Application.id = ApplicationPhotos.idApp where Application.applicationGuid=@appGuid;", new { appGuid });
+                    return Ok(res);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("Photos/{appGuid}/{id}")]
+        public async Task<IActionResult> GetAppPhotosByCategory(Guid appGuid,int id)
+        {
+            try
+            {
+                using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
+                {
+                    var res = await con.QueryAsync<PhotoToGet>("SELECT ApplicationPhotos.idPhotoType, ApplicationPhotos.photoGuid as photo FROM [ApplicationPhotos] join Application on Application.id = ApplicationPhotos.idApp where Application.applicationGuid=@appGuid and ApplicationPhotos.idPhotoType=@id;", new { appGuid, id });
                     return Ok(res);
                 }
             }
