@@ -20,7 +20,7 @@ namespace AppStoreAPI.Services
                 .AddClaim("Guid", user.Guid)
                 .AddClaim("Name", user.Name)
                 .AddClaim("role", user.Role)
-                .AddClaim("devGuid", user.Developer.devGuid)
+                .AddClaim("devGuid", user.Developer == null ? Guid.Empty : user.Developer.devGuid)
                 .Encode();
         }
     }
