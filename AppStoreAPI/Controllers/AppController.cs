@@ -23,7 +23,7 @@ namespace AppStoreAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    
+
     public class AppController : ControllerBase
     {
         private readonly IWebHostEnvironment environment;
@@ -34,10 +34,10 @@ namespace AppStoreAPI.Controllers
             this.environment = environment;
             this.config = config;
         }
-        
-        [HttpGet("{appGuid}", Name ="AppGet")]
+
+        [HttpGet("{appGuid}", Name = "AppGet")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetByGuid(Guid appGuid) 
+        public async Task<IActionResult> GetByGuid(Guid appGuid)
         {
             try
             {
@@ -74,12 +74,12 @@ namespace AppStoreAPI.Controllers
                         return Ok(res);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
-        
+
         /// <summary>
         /// Method that Allows to search by apps by multiple parameters
         /// </summary>
@@ -93,13 +93,17 @@ namespace AppStoreAPI.Controllers
         /// <returns>A List of Apps that fulfill the requirements</returns>
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult Search([FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="pageNumber")] int pageNumber=1,[FromQuery(Name = "pageSize")] int pageSize=5)
+        public IActionResult Search([FromQuery(Name ="search")] string search, [FromQuery(Name = "sortBy")] string sortBy, [FromQuery(Name = "orderBy")] string orderBy, [FromQuery(Name ="devGuid")] string devGuid,[FromQuery(Name ="Category")] int? category, [FromQuery(Name = "MasterCategory")] int? masterCategory,[FromQuery(Name ="pageNumber")] int pageNumber=1,[FromQuery(Name = "pageSize")] int pageSize=5)
         {
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 int idDev=0;
                 string sql = "Select Application.*,dbo.getRatingAverage(Application.id) as ratingAverage,dbo.getIconPhoto(Application.id) as icon,ApplicationCategory.*,ApplicationMasterCategory.*,Developer.* from Application join ApplicationCategory on Application.idAppCategory=ApplicationCategory.id join ApplicationMasterCategory on ApplicationMasterCategory.id = ApplicationCategory.MasterCategoryID join Developer on Developer.id = Application.idDeveloper";
                 sql += " where";
+                if (!string.IsNullOrEmpty(search))
+                {
+                    sql += " (Developer.devName like @search or Application.packageName like @search or Application.title like @search) and";
+                }
                 if (!string.IsNullOrEmpty(devGuid)) {
                     idDev = con.ExecuteScalar<int>("Select id from Developer where devGuid=@devGuid", new {devGuid});
                     sql += " Application.idDeveloper=@idDev and"; 
@@ -171,7 +175,7 @@ namespace AppStoreAPI.Controllers
                     };
                 },
                 splitOn:"id,ratingAverage,icon,id,id,id"
-                ,param:new {idDev,category=category.Value,masterCategory=masterCategory.Value});
+                ,param:new {idDev,category=category.Value,masterCategory=masterCategory.Value,search="%"+search+"%"});
 
                 return Ok(new
                 {
