@@ -65,7 +65,7 @@ namespace AppStoreAPI.Controllers
 
         [HttpPost("validate")]
         [Authorize]
-        public async Task<IActionResult> ValidateToken()
+        public IActionResult ValidateToken()
         {
             return Ok();
         }
