@@ -336,11 +336,78 @@ namespace AppStoreAPI.Controllers
             }
         }
 
+        [HttpPost("Download/{appGuid}")]
+        [Authorize]
+        public async Task<IActionResult> registerDownload([FromRoute] Guid appGuid)
+        {
+            var guid = User.FindFirst("guid").Value;
+            using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
+            {
+                con.Open();
+                try
+                {
+                    int idUser = await con.QueryFirstAsync<int>("Select id from users where guid=@guid", new { guid });
+                    int idApp = await con.QueryFirstAsync<int>("Select id from application where applicationGuid=@appGuid", new {appGuid});
+                    var sql = "Insert into UserLibrary(idUser,idApp,dateOfPurchase) values (@idUser,@idApp,@dateOfPurchase);";
+
+                    await con.ExecuteAsync(sql, new {idUser,idApp,dateOfPurchase=DateTime.Now});
+                }
+                catch(Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+                con.Close();
+            }
+            return Ok();
+        }
+
         [HttpPut("Update/Details")]
         [Authorize(Roles = "Dev")]
         public async Task<IActionResult> UpdateAplicationDetails([FromBody]ApplicationDetailsToUpdate appToUpdate)
         {
-            var sql = "Select Application.* from Application join Developer on Application.idDeveloper=Developer.id where @devGuid=Developer.devGuid and @";
+            var guid = User.FindFirst("devGuid").Value;
+
+            
+
+            var sql = "Update Application set";
+            if(appToUpdate.idAppCategory != 0)
+            {
+                sql += " idAppCategory=@idAppCategory,";
+            }
+            if(!string.IsNullOrWhiteSpace(appToUpdate.title))
+            {
+                sql += " title=@title,";
+            }
+            if (!string.IsNullOrWhiteSpace(appToUpdate.description))
+            {
+                sql += " description=@description";
+            }
+            if (sql.EndsWith(","))
+            {
+                sql.Remove(sql.Length - 1, 1);
+            }
+            sql += " where idDeveloper=@idDeveloper and applicationGuid=@appGuid";
+            try
+            {
+                using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
+                {
+                    con.Open();
+                    int id = await con.QueryFirstAsync<int>("Select id from developer where devGuid=@guid",new{ guid });
+                    await con.ExecuteAsync(sql,new 
+                    {
+                        idAppCategory=appToUpdate.idAppCategory,
+                        title=appToUpdate.title,
+                        description=appToUpdate.description,
+                        idDeveloper=id,
+                        appGuid=appToUpdate.applicationGuid
+                    });
+                    con.Close();
+                }
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
             return Ok();
         }
 
