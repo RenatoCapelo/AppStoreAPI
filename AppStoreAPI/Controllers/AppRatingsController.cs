@@ -27,7 +27,15 @@ namespace AppStoreAPI.Controllers
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 con.Open();
-                var ratings = await con.QueryAsync<ApplicationRatings_dbo>("SELECT ApplicationRatings.* FROM ApplicationRatings join Application on ApplicationRatings.idApplication=Application.id where Application.applicationGuid=@guid", new {guid});
+                var ratings = await con.QueryAsync<ApplicationRatings_dbo,UserToGet,DeveloperToGet,ApplicationRating>("SELECT ApplicationRatings.*,Users.*,Developer.* FROM ApplicationRatings join Users on ApplicationRatings.idUser=Users.id left join Developer on Developer.idUser=Users.id join Application on ApplicationRatings.idApplication=Application.id where Application.applicationGuid=@guid", (rating, author, developer)=>{
+                    author.Developer= developer;
+                    return new ApplicationRating(){ 
+                        Author = author,
+                        Rating = rating.rating,
+                        Comment=rating.comment,
+                        Id=rating.id
+                    };
+                } ,new {guid});
                 con.Close();
                 return Ok(ratings);
             }
@@ -40,7 +48,16 @@ namespace AppStoreAPI.Controllers
             using (var con = new SqlConnection(config.GetConnectionString("DefaultConnection")))
             {
                 con.Open();
-                var ratings = await con.QueryAsync<ApplicationRatings_dbo>("SELECT ApplicationRatings.* FROM ApplicationRatings join Application on ApplicationRatings.idApplication=Application.id join Users on ApplicationRatings.idUser=Users.id where Application.applicationGuid=@guid and Users.guid=@userGuid", new { guid,userGuid });
+                var ratings = await con.QueryAsync<ApplicationRatings_dbo, UserToGet, DeveloperToGet, ApplicationRating>("SELECT ApplicationRatings.*,Users.*,Developer.* FROM ApplicationRatings join Users on ApplicationRatings.idUser=Users.id join Developer on Developer.idUser=Users.id join Application on ApplicationRatings.idApplication=Application.id where Application.applicationGuid=@guid and Users.guid=@userGuid",(rating, author, developer)=>{
+                    author.Developer = developer;
+                    return new ApplicationRating()
+                    {
+                        Author = author,
+                        Rating = rating.rating,
+                        Comment = rating.comment,
+                        Id = rating.id
+                    };
+                } , new { guid,userGuid });
                 con.Close();
                 return Ok(ratings);
             }
